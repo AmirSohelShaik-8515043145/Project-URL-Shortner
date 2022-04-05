@@ -4,34 +4,32 @@ const shortid = require('short-id')
 
 const createShortUrl = async (req, res) => {
     try {
-        let baseUrl = 'http://localhost:3000';
-        let urlCode = shortid.generate()
-        let longUrl = (req.body.longUrl).trim();
-        let shortUrl = baseUrl + '/' + urlCode;
-        let data = {
-            urlCode: urlCode,
-            longUrl: longUrl,
-            shortUrl: shortUrl
-        }
-
         // Validation for BaseUrl :
+        let baseUrl = 'http://localhost:3000';
         if (!(/^https?:\/\/\w/).test(baseUrl)) { return res.status(400).send({ status: false, msg: "Please check your Base Url, Provide a valid One." }) }
 
-        // Validation for UrlCode :
-        if (!urlCode) { return res.status(400).send({ status: false, msg: "urlCode should be required" }) }
-        let duplicateUrlCode = await urlModel.findOne({ urlCode: urlCode })
-        if (duplicateUrlCode) { return res.status(400).send({ status: false, message: "urlCode already exist in the DataBase" }) }
+        // UrlCode Generate :
+        let urlCode = shortid.generate()
 
         // Validation for Long Url :
+        let longUrl = (req.body.longUrl).trim();
         if (!longUrl) { return res.status(400).send({ status: false, msg: "Please provide a longUrl into postman" }) }
         if (!(/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/.test(longUrl))) { return res.status(400).send({ status: false, msg: "Please provide a valid longUrl" }) }
         let duplicateLongUrl = await urlModel.findOne({ longUrl: longUrl })
         if (duplicateLongUrl) { return res.status(302).send({ msg: "There is already a shortUrl present in the Database with this Url", "Use this shortUrl": duplicateLongUrl.shortUrl }) }
 
         // Validation for Short Url :
+        let shortUrl = baseUrl + '/' + urlCode;
         if (!shortUrl) { return res.status(400).send({ status: false, msg: "No shortUrl found, please check again" }) }
 
+        let data = {
+            urlCode: urlCode,
+            longUrl: longUrl,
+            shortUrl: shortUrl
+        }
+        console.log(data)
         let urlDetails = await urlModel.create(data)
+
         let result = {
             urlCode: urlDetails.urlCode,
             longUrl: urlDetails.longUrl,
@@ -48,7 +46,6 @@ const createShortUrl = async (req, res) => {
 const getUrl = async function (req, res) {
     try {
         let urlCode = req.params.urlCode
-        if (urlCode.length != 6) { return res.status(400).send({ status: false, msg: "Please provide a valid urlCode" }) }
         let url = await urlModel.findOne({ urlCode: urlCode })
 
         if (!url) { return res.status(404).send({ status: false, msg: "No url found with this urlCode" }) }
