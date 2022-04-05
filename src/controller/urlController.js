@@ -18,9 +18,8 @@ const createShortUrl = async (req, res) => {
         let duplicateLongUrl = await urlModel.findOne({ longUrl: longUrl })
         if (duplicateLongUrl) { return res.status(302).send({ msg: "There is already a shortUrl present in the Database with this Url", "Use this shortUrl": duplicateLongUrl.shortUrl }) }
 
-        // Validation for Short Url :
+        // Generate ShortUrl :
         let shortUrl = baseUrl + '/' + urlCode;
-        if (!shortUrl) { return res.status(400).send({ status: false, msg: "No shortUrl found, please check again" }) }
 
         let data = {
             urlCode: urlCode,
