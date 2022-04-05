@@ -25,6 +25,8 @@ const createShortUrl = async (req, res) => {
         // Validation for Long Url :
         if (!longUrl) { return res.status(400).send({ status: false, msg: "Please provide a longUrl into postman" }) }
         if (!(/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/.test(longUrl))) { return res.status(400).send({ status: false, msg: "Please provide a valid longUrl" }) }
+        let duplicateLongUrl = await urlModel.findOne({longUrl:longUrl})
+        if(duplicateLongUrl){return res.status(302).send({status:false,msg:"There is already a shortUrl present in the Database with this Url","Use this shortUrl": duplicateLongUrl.shortUrl})}
 
         // Validation for Short Url :
         if (!shortUrl) { return res.status(400).send({ status: false, msg: "No shortUrl found, please check again" }) }
@@ -35,7 +37,7 @@ const createShortUrl = async (req, res) => {
             longUrl: urlDetails.longUrl,
             shortUrl: urlDetails.shortUrl
         }
-        return res.status(400).send({ status: true, url: result })
+        return res.status(400).send({ status: true, data: result })
     }
     catch (error) {
         console.log(error)
