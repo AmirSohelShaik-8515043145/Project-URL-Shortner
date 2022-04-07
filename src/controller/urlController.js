@@ -19,10 +19,6 @@ redisClient.on("connect", async function () {
 });
 
 
-
-//1. connect to the server
-//2. use the commands :
-
 //Connection setup for redis------------------
 
 const SET_ASYNC = promisify(redisClient.SET).bind(redisClient);
@@ -40,9 +36,17 @@ const createShortUrl = async (req, res) => {
         // Validation for Long Url :
         let longUrl = req.body.longUrl;
         if (!longUrl) { return res.status(400).send({ status: false, msg: "Please provide a longUrl into postman" }) }
-        if (!(/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/.test(longUrl.trim()))) { return res.status(400).send({ status: false, msg: "Please provide a valid longUrl" }) }
-        let duplicateLongUrl = await urlModel.findOne({ longUrl: longUrl })
-        if (duplicateLongUrl) { return res.status(302).send({ msg: "Already a shortUrl exist with this Url", shortUrl: duplicateLongUrl.shortUrl }) }
+        if (!(/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/.test(longUrl.trim())))
+        { return res.status(400).send({ status: false, msg: "Please provide a valid longUrl" }) }
+
+
+        let duplicateLongUrl = await GET_ASYNC(`${longUrl}`)
+        let duplicateLongUrlCache = JSON.parse(duplicateLongUrl)
+        if (duplicateLongUrlCache) return res.status(302).send({ msg: "Already a shortUrl exist with this Url in Cache", urlDetails: duplicateLongUrlCache })
+
+        let duplicateLongUrlDB = await urlModel.findOne({ longUrl: longUrl })
+        if (duplicateLongUrlDB) return res.status(302).send({ msg: "Already a shortUrl exist with this Url in DB",urlDetails:duplicateLongUrlDB })
+
 
         // Generate ShortUrl :
         let shortUrl = baseUrl + '/' + urlCode;
@@ -59,7 +63,8 @@ const createShortUrl = async (req, res) => {
             longUrl: urlDetails.longUrl,
             shortUrl: urlDetails.shortUrl
         }
-        return res.status(400).send({ status: true, data: result })
+        await SET_ASYNC(`${longUrl}`, JSON.stringify(result))
+        return res.status(200).send({ status: true, data: result })
     }
     catch (error) {
         console.log(error)
