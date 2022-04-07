@@ -1,5 +1,32 @@
 const urlModel = require("../model/urlModel")
 const shortid = require('short-id')
+const redis = require("redis");
+
+const { promisify } = require("util");
+
+//Connect to redis
+const redisClient = redis.createClient(
+    13953,
+    "redis-13953.c212.ap-south-1-1.ec2.cloud.redislabs.com",
+    { no_ready_check: true }
+);
+redisClient.auth("PVnXD258CEJmOiydei42mjXOCMuzKEQF", function (err) {
+    if (err) throw err;
+});
+
+redisClient.on("connect", async function () {
+    console.log("Connected to Redis..");
+});
+
+
+
+//1. connect to the server
+//2. use the commands :
+
+//Connection setup for redis
+
+const SET_ASYNC = promisify(redisClient.SET).bind(redisClient);
+const GET_ASYNC = promisify(redisClient.GET).bind(redisClient);
 
 
 const createShortUrl = async (req, res) => {
@@ -26,7 +53,6 @@ const createShortUrl = async (req, res) => {
             longUrl: longUrl,
             shortUrl: shortUrl
         }
-        console.log(data)
         let urlDetails = await urlModel.create(data)
 
         let result = {
@@ -42,21 +68,34 @@ const createShortUrl = async (req, res) => {
     }
 }
 
+
 const getUrl = async function (req, res) {
     try {
         let urlCode = req.params.urlCode
-        let url = await urlModel.findOne({ urlCode: urlCode })
+        let url = await GET_ASYNC(`${urlCode}`)
 
-        if (!url) { return res.status(404).send({ status: false, msg: "No url found with this urlCode" }) }
-        if (url) { return res.status(200).redirect(url.longUrl) }
+        if (url) {
+            return res.status(302).redirect(JSON.parse(url))
+        }
+        else {
+            let urlInMongoDB = await urlModel.findOne({ urlCode: urlCode });
+            if (urlInMongoDB) {
+                await SET_ASYNC(`${urlCode}`, JSON.stringify(urlInMongoDB.longUrl))
+                return res.status(302).redirect(urlInMongoDB.longUrl);
+            }
+            else {
+                return res.status(404).send({ status: false, msg: "No url found with this urlCode" })
+            }
+        }
     }
     catch (err) {
-        return res.status(500).send({ status: true, message: err.message })
+            console.log(error)
+            return res.status(500).status(500).send({ status: true, message: err.message })
+        }
     }
-}
 
 
 module.exports = {
-    createShortUrl,
-    getUrl
-}
+        createShortUrl,
+        getUrl
+    }
