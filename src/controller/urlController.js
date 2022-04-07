@@ -23,7 +23,7 @@ redisClient.on("connect", async function () {
 //1. connect to the server
 //2. use the commands :
 
-//Connection setup for redis
+//Connection setup for redis------------------
 
 const SET_ASYNC = promisify(redisClient.SET).bind(redisClient);
 const GET_ASYNC = promisify(redisClient.GET).bind(redisClient);
@@ -40,8 +40,7 @@ const createShortUrl = async (req, res) => {
         // Validation for Long Url :
         let longUrl = req.body.longUrl;
         if (!longUrl) { return res.status(400).send({ status: false, msg: "Please provide a longUrl into postman" }) }
-        if (!(/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/.test(longUrl.trim())))
-        { return res.status(400).send({ status: false, msg: "Please provide a valid longUrl" }) }
+        if (!(/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/.test(longUrl.trim()))) { return res.status(400).send({ status: false, msg: "Please provide a valid longUrl" }) }
         let duplicateLongUrl = await urlModel.findOne({ longUrl: longUrl })
         if (duplicateLongUrl) { return res.status(302).send({ msg: "Already a shortUrl exist with this Url", shortUrl: duplicateLongUrl.shortUrl }) }
 
