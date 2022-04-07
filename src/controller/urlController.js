@@ -37,13 +37,13 @@ const createShortUrl = async (req, res) => {
 
         // UrlCode Generate :
         let urlCode = shortid.generate()
-
         // Validation for Long Url :
-        let longUrl = (req.body.longUrl).trim();
+        let longUrl = req.body.longUrl;
         if (!longUrl) { return res.status(400).send({ status: false, msg: "Please provide a longUrl into postman" }) }
-        if (!(/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/.test(longUrl))) { return res.status(400).send({ status: false, msg: "Please provide a valid longUrl" }) }
+        if (!(/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/.test(longUrl.trim())))
+        { return res.status(400).send({ status: false, msg: "Please provide a valid longUrl" }) }
         let duplicateLongUrl = await urlModel.findOne({ longUrl: longUrl })
-        if (duplicateLongUrl) { return res.status(302).send({ msg: "There is already a shortUrl present in the Database with this Url", "Use this shortUrl": duplicateLongUrl.shortUrl }) }
+        if (duplicateLongUrl) { return res.status(302).send({ msg: "Already a shortUrl exist with this Url", shortUrl: duplicateLongUrl.shortUrl }) }
 
         // Generate ShortUrl :
         let shortUrl = baseUrl + '/' + urlCode;
@@ -72,16 +72,16 @@ const createShortUrl = async (req, res) => {
 const getUrl = async function (req, res) {
     try {
         let urlCode = req.params.urlCode
-        let url = await GET_ASYNC(`${urlCode}`)
+        let urlFromCache = await GET_ASYNC(`${urlCode}`)
 
-        if (url) {
-            return res.status(302).redirect(JSON.parse(url))
+        if (urlFromCache) {
+            return res.status(302).redirect(JSON.parse(urlFromCache))
         }
         else {
-            let urlInMongoDB = await urlModel.findOne({ urlCode: urlCode });
-            if (urlInMongoDB) {
-                await SET_ASYNC(`${urlCode}`, JSON.stringify(urlInMongoDB.longUrl))
-                return res.status(302).redirect(urlInMongoDB.longUrl);
+            let urlFromMongoDB = await urlModel.findOne({ urlCode: urlCode });
+            if (urlFromMongoDB) {
+                await SET_ASYNC(`${urlCode}`, JSON.stringify(urlFromMongoDB.longUrl))
+                return res.status(302).redirect(urlFromMongoDB.longUrl);
             }
             else {
                 return res.status(404).send({ status: false, msg: "No url found with this urlCode" })
@@ -89,13 +89,13 @@ const getUrl = async function (req, res) {
         }
     }
     catch (err) {
-            console.log(error)
-            return res.status(500).status(500).send({ status: true, message: err.message })
-        }
+        console.log(error)
+        return res.status(500).status(500).send({ status: true, message: err.message })
     }
+}
 
 
 module.exports = {
-        createShortUrl,
-        getUrl
-    }
+    createShortUrl,
+    getUrl
+}
