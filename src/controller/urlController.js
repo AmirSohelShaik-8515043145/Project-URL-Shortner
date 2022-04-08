@@ -44,11 +44,11 @@ const createShortUrl = async (req, res) => {
         let duplicateLongUrlCache = JSON.parse(duplicateLongUrl)
         if (duplicateLongUrlCache) return res.status(302).send({ msg: "Already a shortUrl exist with this Url in Cache", urlDetails: duplicateLongUrlCache })
 
-        // let duplicateLongUrlDB = await urlModel.findOne({ longUrl: longUrl }).select({_id:0,urlCode:1,longUrl:1,shortUrl:1})
-        // if (duplicateLongUrlDB){
-        //     await SET_ASYNC(`${longUrl}`, JSON.stringify(duplicateLongUrlDB))
-        //     return res.status(302).send({ msg: "Already a shortUrl exist with this Url in DB",urlDetails:duplicateLongUrlDB })
-        // }
+        let duplicateLongUrlDB = await urlModel.findOne({ longUrl: longUrl }).select({_id:0,urlCode:1,longUrl:1,shortUrl:1})
+        if (duplicateLongUrlDB){
+            await SET_ASYNC(`${longUrl}`, JSON.stringify(duplicateLongUrlDB))
+            return res.status(302).send({ msg: "Already a shortUrl exist with this Url in DB",urlDetails:duplicateLongUrlDB })
+        }
         
 
         // Generate ShortUrl :
@@ -66,7 +66,7 @@ const createShortUrl = async (req, res) => {
             longUrl: urlDetails.longUrl,
             shortUrl: urlDetails.shortUrl
         }
-        await SET_ASYNC(`${longUrl}`, JSON.stringify(result))
+        // await SET_ASYNC(`${longUrl}`, JSON.stringify(result))
         return res.status(201).send({ status: true, data: result })
     }
     catch (error) {
