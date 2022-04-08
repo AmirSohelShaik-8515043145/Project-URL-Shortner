@@ -44,9 +44,12 @@ const createShortUrl = async (req, res) => {
         let duplicateLongUrlCache = JSON.parse(duplicateLongUrl)
         if (duplicateLongUrlCache) return res.status(302).send({ msg: "Already a shortUrl exist with this Url in Cache", urlDetails: duplicateLongUrlCache })
 
-        let duplicateLongUrlDB = await urlModel.findOne({ longUrl: longUrl })
-        if (duplicateLongUrlDB) return res.status(302).send({ msg: "Already a shortUrl exist with this Url in DB",urlDetails:duplicateLongUrlDB })
-
+        let duplicateLongUrlDB = await urlModel.findOne({ longUrl: longUrl }).select({_id:0,urlCode:1,longUrl:1,shortUrl:1})
+        if (duplicateLongUrlDB){
+            await SET_ASYNC(`${longUrl}`, JSON.stringify(duplicateLongUrlDB))
+            return res.status(302).send({ msg: "Already a shortUrl exist with this Url in DB",urlDetails:duplicateLongUrlDB })
+        }
+        
 
         // Generate ShortUrl :
         let shortUrl = baseUrl + '/' + urlCode;
@@ -63,7 +66,7 @@ const createShortUrl = async (req, res) => {
             longUrl: urlDetails.longUrl,
             shortUrl: urlDetails.shortUrl
         }
-        await SET_ASYNC(`${longUrl}`, JSON.stringify(result))
+        // await SET_ASYNC(`${longUrl}`, JSON.stringify(result))
         return res.status(200).send({ status: true, data: result })
     }
     catch (error) {
@@ -79,13 +82,13 @@ const getUrl = async function (req, res) {
         let urlFromCache = await GET_ASYNC(`${urlCode}`)
 
         if (urlFromCache) {
-            return res.status(302).redirect(JSON.parse(urlFromCache))
+            return res.status(200).redirect(JSON.parse(urlFromCache))
         }
         else {
             let urlFromMongoDB = await urlModel.findOne({ urlCode: urlCode });
             if (urlFromMongoDB) {
                 await SET_ASYNC(`${urlCode}`, JSON.stringify(urlFromMongoDB.longUrl))
-                return res.status(302).redirect(urlFromMongoDB.longUrl);
+                return res.status(200).redirect(urlFromMongoDB.longUrl);
             }
             else {
                 return res.status(404).send({ status: false, msg: "No url found with this urlCode" })
@@ -94,7 +97,7 @@ const getUrl = async function (req, res) {
     }
     catch (err) {
         console.log(error)
-        return res.status(500).status(500).send({ status: true, message: err.message })
+        return res.status(500).send({ status: true, message: err.message })
     }
 }
 
