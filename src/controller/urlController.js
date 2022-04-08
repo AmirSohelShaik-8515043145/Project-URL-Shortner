@@ -15,7 +15,7 @@ redisClient.auth("PVnXD258CEJmOiydei42mjXOCMuzKEQF", function (err) {
 });
 
 redisClient.on("connect", async function () {
-    console.log("Connected to Redis..");
+    console.log("Connected to Redis on 13953");
 });
 
 
@@ -36,7 +36,7 @@ const createShortUrl = async (req, res) => {
         // Validation for Long Url :
         let longUrl = req.body.longUrl;
         if (!longUrl) { return res.status(400).send({ status: false, msg: "Please provide a longUrl into postman" }) }
-        if (!(/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/.test(longUrl.trim())))
+        if (!(/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/.test((longUrl.toLowerCase()).trim())))
         { return res.status(400).send({ status: false, msg: "Please provide a valid longUrl" }) }
 
 
@@ -104,5 +104,5 @@ const getUrl = async function (req, res) {
 
 module.exports = {
     createShortUrl,
-    getUrl
+    getUrl 
 }
