@@ -6,16 +6,16 @@ const { promisify } = require("util");
 
 //Connect to redis
 const redisClient = redis.createClient(
-    13953,
-    "redis-13953.c212.ap-south-1-1.ec2.cloud.redislabs.com",
+    18795,
+    "redis-18795.c264.ap-south-1-1.ec2.cloud.redislabs.com",
     { no_ready_check: true }
 );
-redisClient.auth("PVnXD258CEJmOiydei42mjXOCMuzKEQF", function (err) {
+redisClient.auth("oL8A5aKoEKhu44YCAUzXdInOcRs0m4o6", function (err) {
     if (err) throw err;
 });
 
 redisClient.on("connect", async function () {
-    console.log("Connected to Redis on 13953");
+    console.log("Redis is running on Port 18795");
 });
 
 
@@ -46,7 +46,7 @@ const createShortUrl = async (req, res) => {
 
         let duplicateLongUrlDB = await urlModel.findOne({ longUrl: longUrl }).select({_id:0,urlCode:1,longUrl:1,shortUrl:1})
         if (duplicateLongUrlDB){
-            await SET_ASYNC(`${longUrl}`, JSON.stringify(duplicateLongUrlDB))
+            await SET_ASYNC(`${longUrl}`, JSON.stringify(duplicateLongUrlDB),"EX",10)
             return res.status(302).send({ msg: "Already a shortUrl exist with this Url in DB",urlDetails:duplicateLongUrlDB })
         }
         
@@ -66,7 +66,7 @@ const createShortUrl = async (req, res) => {
             longUrl: urlDetails.longUrl,
             shortUrl: urlDetails.shortUrl
         }
-        // await SET_ASYNC(`${longUrl}`, JSON.stringify(result))
+        await SET_ASYNC(`${longUrl}`, JSON.stringify(result),"EX",10)
         return res.status(201).send({ status: true, data: result })
     }
     catch (error) {
@@ -87,7 +87,7 @@ const getUrl = async function (req, res) {
         else {
             let urlFromMongoDB = await urlModel.findOne({ urlCode: urlCode });
             if (urlFromMongoDB) {
-                await SET_ASYNC(`${urlCode}`, JSON.stringify(urlFromMongoDB.longUrl))
+                await SET_ASYNC(`${urlCode}`, JSON.stringify(urlFromMongoDB.longUrl),"EX",20)
                 return res.status(200).redirect(urlFromMongoDB.longUrl);
             }
             else {
